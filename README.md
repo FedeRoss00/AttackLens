@@ -4,4 +4,4 @@ AttackLens è uno strumento di security assessment automatizzato progettato per 
 
 L'obiettivo è semplificare le attività di security testing, fornendo una panoramica centralizzata dello stato di sicurezza di un target autorizzato.
 
-**Provalo subito su https://rosscoding.com/AttackLens.php**
+**Provalo subito su https://rosscoding.com/AttackLens/**
