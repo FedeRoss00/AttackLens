@@ -1,39 +1,83 @@
 <?php
 $message = "";
+// imposto il webhook di n8n per ricevere i dati del form
+$webhook_url = "https://n8n.rosscoding.com/webhook/723b643c-7a77-4c7e-92b9-05e523e5b8ea";
 
-// Assicurati che l'URL inizi tassativamente con HTTPS e contenga "n8n."
-$webhook_url = "https://n8n.rosscoding.com/webhook/723b643c-7a77-4c7e-92b9-05e523e5b8ea"; 
+// impedisco l'invio di richieste a target interni o privati. Rimuovo il protocollo, estraggo l'host e controllo se è un IP pubblico o un dominio con record A/AAAA pubblici.
+function isPublicTarget(string $target): bool {
+    $host = preg_replace('#^https?://#i', '', $target);
+    $host = explode('/', $host)[0];
+    $host = explode(':', $host)[0]; 
+
+    if (filter_var($host, FILTER_VALIDATE_IP)) {
+        return filter_var(
+            $host,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        ) !== false;
+    }
+
+    $ips = [];
+    $recordsA = dns_get_record($host, DNS_A);
+    $recordsAAAA = dns_get_record($host, DNS_AAAA);
+    foreach (array_merge($recordsA ?: [], $recordsAAAA ?: []) as $r) {
+        if (!empty($r['ip'])) $ips[] = $r['ip'];
+        if (!empty($r['ipv6'])) $ips[] = $r['ipv6'];
+    }
+
+    if (empty($ips)) {
+        return false; 
+    }
+
+    foreach ($ips as $ip) {
+        if (filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        ) === false) {
+            return false; 
+        }
+    }
+
+    return true;
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $target = htmlspecialchars(trim($_POST['target']));
     $email = htmlspecialchars(trim($_POST['email']));
-    
-    $data = json_encode([
-        "target" => $target,
-        "email" => $email
-    ]);
-    
-    $ch = curl_init($webhook_url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
-        'Content-Length: ' . strlen($data)
-    ]);
-    
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curl_error = curl_error($ch);
-    curl_close($ch);
-    
-    if ($http_code >= 200 && $http_code < 300) {
-        $message = "<div class='alert success'>✅ Richiesta inviata a n8n con successo!</div>";
+
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $message = "<div class='alert error'>❌ Email non valida.</div>";
+    } elseif (!isPublicTarget($target)) {
+        $message = "<div class='alert error'>❌ Target non consentito: indirizzi IP privati, riservati o interni non sono ammessi.</div>";
     } else {
-        $message = "<div class='alert error'>❌ Errore HTTP: $http_code<br><small>Errore cURL: $curl_error</small></div>";
+        $data = json_encode([
+            "target" => $target,
+            "email" => $email
+        ]);
+
+        $ch = curl_init($webhook_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($data)
+        ]);
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        curl_close($ch);
+
+        if ($http_code >= 200 && $http_code < 300) {
+            $message = "<div class='alert success'>✅ Richiesta inviata a n8n con successo!</div>";
+        } else {
+            $message = "<div class='alert error'>❌ Errore HTTP: $http_code<br><small>Errore cURL: $curl_error</small></div>";
+        }
     }
 }
 ?>
