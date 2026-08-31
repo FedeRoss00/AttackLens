@@ -8,6 +8,7 @@ Nello sviluppo dell'utility mi sono servito di un piccolo **file in php** per la
 **Imposto un link di tipo webhook in grado di ricevere le richieste**
 il link webhook è un indirizzo con la capacità di rimanere in ascolto e in attesa di recezione di dati (in questo caso col metodo POST).
 
+```json
      {
       "parameters": {
         "httpMethod": "POST",
@@ -25,11 +26,13 @@ il link webhook è un indirizzo con la capacità di rimanere in ascolto e in att
       "name": "Webhook1",
       "webhookId": "723b643c-7a77-4c7e-92b9-05e523e5b8ea"
     }
+    ```
 
 **Nodo 2**
 **Controllo i dati ricevuti per la richiesta**
 con il seguente codice attraverso i const rawTarget e rawEmail reperisco i dati ricevuti salvandoli. Successivamente attraverso i replace ripulisco il dato del target (o dominio) da https e gli slash. Poi dichiaro le costanti ipRegex, domainRegex, emailRegex per controllare la formazione dei dati. Infine applico le regole definite, gestisco gli errori e restituisco i dati.
 
+```json
     {
       "parameters": {
         "jsCode": "const body = $('Webhook1').first().json.body || $('Webhook1').first().json;
@@ -68,6 +71,7 @@ con il seguente codice attraverso i const rawTarget e rawEmail reperisco i dati 
       "id": "c8872c64-2bbc-45e8-88a7-9da921b088e4",
       "name": "Check Richiesta1"
     }
+    ```
 
 **Nodo 3**
 **Simulazione di Attacchi al Dominio o IP**
@@ -88,6 +92,7 @@ dopo aver recuperato i dati di email e target attraverso il seguente modulo impo
 14. Attraverso https://${target}/uploads/ tento di accedere alla cartella dei caricamenti.
 15. Attraverso di nuovo https://${target} verifico che la connssione sia sicura attraverso l'header HTTPS.
 
+```json
     {
       "parameters": {
         "jsCode": "
@@ -127,3 +132,5 @@ dopo aver recuperato i dati di email e target attraverso il seguente modulo impo
       "id": "57d7674c-8eca-4946-928a-b4721ba25d5e",
       "name": "Simulate Attack1"
     }
+    ```
+    
