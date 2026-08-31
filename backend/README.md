@@ -6,11 +6,9 @@ Nello sviluppo dell'utility mi sono servito di un piccolo **file in php** per la
 
 **Imposto un link di tipo webhook in grado di ricevere le richieste**
 il link webhook è un indirizzo con la capacità di rimanere in ascolto e in attesa di recezione di dati (in questo caso col metodo POST).
- ---------------
-|               |
-|     NODO 1    |
-|               |
- ---------------
+
+**Nodo 1**
+
      {
       "parameters": {
         "httpMethod": "POST",
